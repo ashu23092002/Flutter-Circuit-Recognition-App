@@ -28,7 +28,7 @@ Future<void> main() async {
 class CameraApp extends StatefulWidget {
   final List<CameraDescription> cameras;
 
-  /// Default Constructor
+  /// Camera App Initialization
   const CameraApp({super.key, required this.cameras});
 
 
@@ -89,6 +89,7 @@ class CameraScreenState extends State<CameraApp> {
         mainAxisAlignment: MainAxisAlignment.end,
         spacing: 10,
         children: [
+          /// Take Picture
           FloatingActionButton(
             heroTag: 'take_picture',
             onPressed: () async {
@@ -116,6 +117,7 @@ class CameraScreenState extends State<CameraApp> {
               }
             )
           ),
+          /// Switch Camera
           FloatingActionButton(
             onPressed: _switchCamera,
             heroTag: 'switch_camera',
@@ -137,6 +139,7 @@ class CameraScreenState extends State<CameraApp> {
 
 class DisplayPictureScreen extends StatelessWidget {
   final String imagePath;
+  ///Display Last Picture
   const DisplayPictureScreen({super.key, required this.imagePath});
 
   @override
@@ -147,72 +150,6 @@ class DisplayPictureScreen extends StatelessWidget {
     );
   }
 }
-
-/// Camera Controller Initialization
-// class _CameraAppState(CameraDescription camera) extends State<CameraApp> {
-//   late CameraController? controller;
-  
-//   _CameraAppState({super.key, required this});
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     controller = CameraController(camera, ResolutionPreset.max);
-//     controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
-//     controller!.initialize().then((_) {
-//       if (!mounted) {
-//         return;
-//       }
-//       setState(() {});
-//     }).catchError((Object e) {
-//       if (e is CameraException) {
-//         switch (e.code) {
-//           case 'CameraAccessDenied':
-//             // Handle access errors here.
-//             break;
-//           default:
-//             // Handle other errors here.
-//             break;
-//         }
-//       }
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     controller!.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     if (controller == null || !controller!.value.isInitialized) {
-//       return Container();
-//     }
-//     return MaterialApp(
-//       home: Scaffold(
-//         appBar: AppBar(
-//           title: Text('Camera Application'),
-//         ),
-//         body: Column(
-//           children: <Widget>[
-//             Expanded(
-//               child: Center(
-//                 child: _cameraPreviewWidget(),
-//               ),
-//             ),
-//           ],
-//         ),
-//       )
-//     );
-//   }
-
-//   Widget _cameraPreviewWidget() {
-//     return CameraPreview(
-//       controller!,
-//     );
-//   }
-// }
 
 /// Default App
 class MainApp extends StatelessWidget {
