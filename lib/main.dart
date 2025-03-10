@@ -10,7 +10,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
       
   if (kIsWeb) {
-    runApp(MainApp(displayText: 'Web App'));
+    runApp(
+      MaterialApp(
+        home: MainApp(displayText: 'Web App')
+      ),
+    );
   } else if(Platform.isAndroid){
     final cameras = await availableCameras();
     runApp(
@@ -21,7 +25,11 @@ Future<void> main() async {
       )
     );
   } else {
-    runApp(MainApp(displayText: 'Desktop App'));
+    runApp(
+      MaterialApp(
+        home: MainApp(displayText: 'Desktop App')
+      ),
+    );
   }
 }
 
@@ -157,19 +165,6 @@ class CameraScreenState extends State<CameraApp> {
   }
 }
 
-class DisplayPictureScreen extends StatelessWidget {
-  final String? imagePath;
-  ///Display Last Picture
-  const DisplayPictureScreen({super.key, required this.imagePath});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Last Picture'),),
-      body: Center(child: Image.file(File(imagePath!)),),
-    );
-  }
-}
 
 /// Default App
 class MainApp extends StatefulWidget {
@@ -184,8 +179,6 @@ class MainApp extends StatefulWidget {
 
 class WindowScreenState extends State<MainApp> {
   late String displayText;
-
-  // TODO: Fix Image Viewer in windows application
   
   /// Select Picture
   void _selectPicture(BuildContext context) async{
@@ -195,15 +188,17 @@ class WindowScreenState extends State<MainApp> {
 
     if(result != null) {
       String? imagePath = result.files.single.path;
-      if(imagePath != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DisplayPictureScreen(
-              imagePath: imagePath
+      if(imagePath != null && mounted) {
+        if(context.mounted) {
+            Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DisplayPictureScreen(
+                imagePath: imagePath
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -238,6 +233,20 @@ class WindowScreenState extends State<MainApp> {
           ]
         ),
       ),
+    );
+  }
+}
+
+class DisplayPictureScreen extends StatelessWidget {
+  final String? imagePath;
+  ///Display Last Picture
+  const DisplayPictureScreen({super.key, required this.imagePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Last Picture'),),
+      body: Center(child: Image.file(File(imagePath!)),),
     );
   }
 }
