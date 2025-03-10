@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -9,7 +10,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
       
   if (kIsWeb) {
-    runApp(MainApp(displayText: 'Web World'));
+    runApp(MainApp(displayText: 'Web App'));
   } else if(Platform.isAndroid){
     final cameras = await availableCameras();
     runApp(
@@ -20,7 +21,7 @@ Future<void> main() async {
       )
     );
   } else {
-    runApp(MainApp(displayText: 'Desktop World'));
+    runApp(MainApp(displayText: 'Desktop App'));
   }
 }
 
@@ -64,6 +65,27 @@ class CameraScreenState extends State<CameraApp> {
     });
   }
 
+  /// Select Picture
+  void _selectPicture() async{
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+
+    if(result != null) {
+      String? imagePath = result.files.single.path;
+      if(imagePath != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DisplayPictureScreen(
+              imagePath: imagePath
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -89,6 +111,14 @@ class CameraScreenState extends State<CameraApp> {
         mainAxisAlignment: MainAxisAlignment.end,
         spacing: 10,
         children: [
+          FloatingActionButton(
+            heroTag: 'select_picture',
+            onPressed: _selectPicture,
+            child: IconTheme(
+              data: IconThemeData(size: 40.0), 
+              child: const Icon(Icons.folder_open),
+            ),
+          ),
           /// Take Picture
           FloatingActionButton(
             heroTag: 'take_picture',
@@ -107,29 +137,19 @@ class CameraScreenState extends State<CameraApp> {
                 print(e);
               }
             },
-            child: Builder(
-              builder: (context) {
-                double iconSize = MediaQuery.of(context).size.width * 0.1;
-                return Icon(
-                  Icons.camera,
-                  size: iconSize,
-                );
-              }
-            )
+            child: IconTheme(
+              data: IconThemeData(size: 40.0),
+              child: const Icon(Icons.camera),
+            ),
           ),
           /// Switch Camera
           FloatingActionButton(
             onPressed: _switchCamera,
             heroTag: 'switch_camera',
-            child: Builder(
-              builder: (context) {
-                double iconSize = MediaQuery.of(context).size.width * 0.1;
-                return Icon(
-                  Icons.switch_camera_outlined,
-                  size: iconSize,
-                );
-              }
-            )
+            child: IconTheme(
+              data: IconThemeData(size: 40.0),
+              child: const Icon(Icons.switch_camera),
+            ),
           ),
         ]
       ),
@@ -138,7 +158,7 @@ class CameraScreenState extends State<CameraApp> {
 }
 
 class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
+  final String? imagePath;
   ///Display Last Picture
   const DisplayPictureScreen({super.key, required this.imagePath});
 
@@ -146,24 +166,76 @@ class DisplayPictureScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Last Picture'),),
-      body: Center(child: Image.file(File(imagePath)),),
+      body: Center(child: Image.file(File(imagePath!)),),
     );
   }
 }
 
 /// Default App
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   final String displayText;
   
   /// Show platform
   const MainApp({super.key, required this.displayText});
 
   @override
+  WindowScreenState createState() => WindowScreenState();
+}
+
+class WindowScreenState extends State<MainApp> {
+  late String displayText;
+
+  // TODO: Fix Image Viewer in windows application
+  
+  /// Select Picture
+  void _selectPicture(BuildContext context) async{
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+    );
+
+    if(result != null) {
+      String? imagePath = result.files.single.path;
+      if(imagePath != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DisplayPictureScreen(
+              imagePath: imagePath
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    displayText = widget.displayText;
+  }
+  
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        appBar: AppBar(title: Text(displayText),),
         body: Center(
           child: Text(displayText),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 10,
+          children: [
+            FloatingActionButton(
+              heroTag: 'select_picture',
+              onPressed: () => _selectPicture(context),
+              child: IconTheme(
+                data: IconThemeData(size: 40.0),
+                child: const Icon(Icons.folder_open),
+              ),
+            ),
+          ]
         ),
       ),
     );
