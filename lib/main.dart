@@ -247,6 +247,21 @@ class DisplayPictureScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Last Picture'),),
       body: Center(child: Image.file(File(imagePath!)),),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 10,
+          children: [
+            FloatingActionButton(
+              heroTag: 'select_picture',
+              onPressed: () {},
+              child: IconTheme(
+                data: IconThemeData(size: 40.0),
+                child: const Icon(Icons.memory),
+              ),
+            ),
+          ]
+        ),
     );
   }
 }
