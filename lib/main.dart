@@ -237,16 +237,21 @@ class WindowScreenState extends State<MainApp> {
   }
 }
 
-class DisplayPictureScreen extends StatelessWidget {
+class DisplayPictureScreen extends StatefulWidget {
   final String? imagePath;
   ///Display Last Picture
   const DisplayPictureScreen({super.key, required this.imagePath});
 
   @override
+  State<DisplayPictureScreen> createState() => _DisplayPictureScreenState();
+}
+
+class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Last Picture'),),
-      body: Center(child: Image.file(File(imagePath!)),),
+      body: Center(child: Image.file(File(widget.imagePath!)),),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: Row(
           mainAxisAlignment: MainAxisAlignment.end,

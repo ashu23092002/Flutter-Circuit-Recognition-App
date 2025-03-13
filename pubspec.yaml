@@ -14,6 +14,7 @@ dependencies:
   path: ^1.9.0
   file_picker: ^9.0.2
   opencv_core: ^1.3.2
+  tflite_flutter: ^0.11.0
 
 dev_dependencies:
   flutter_test:
@@ -25,5 +26,5 @@ flutter:
   assets: 
   - assets/images/Rocket.jpg
   - assets/images/Stars.jpg
-  - assets/images/Sunset.png
+  - assets/images/Sunset.jpg
   - assets/models/best.onnx
