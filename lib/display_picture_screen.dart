@@ -16,7 +16,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Last Picture'),),
-      body: Expanded(child:Center(child: Image.file(File(widget.imagePath!)),)),
+      body: Center(child: Image.file(File(widget.imagePath!)),),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,

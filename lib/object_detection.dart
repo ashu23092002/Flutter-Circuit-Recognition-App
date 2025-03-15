@@ -25,8 +25,13 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   }
 
   Future<void> _loadModel() async{  
-    interpreter = await Interpreter.fromFile(File(r'D:\ASUTOSH MISHRA\Downloads\Assignments\Circuit Recognition DNN\Flutter App\circuit_recognition_app\assets\models\best.tflite'));
-    await _runInference();
+    try{
+      interpreter = await Interpreter.fromFile(File(r'D:\ASUTOSH MISHRA\Downloads\Assignments\Circuit Recognition DNN\Flutter App\circuit_recognition_app\assets\models\best.tflite'));
+      await _runInference();
+      debugPrint("Model Loaded");
+    } catch(e) {
+      debugPrint("Error loading model: $e");
+    }
   }
 
   Future<void> _runInference() async {
