@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'display_picture_screen.dart';
+import 'package:circuit_recognition_app/display_picture_screen.dart';
 
 /// Default App
 class MainApp extends StatefulWidget {

@@ -1,3 +1,4 @@
+import 'package:circuit_recognition_app/object_detection.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 
@@ -17,19 +18,26 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
       appBar: AppBar(title: const Text('Last Picture'),),
       body: Expanded(child:Center(child: Image.file(File(widget.imagePath!)),)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        floatingActionButton: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          spacing: 10,
-          children: [
-            FloatingActionButton(
-              heroTag: 'select_picture',
-              onPressed: () {},
-              child: IconTheme(
-                data: IconThemeData(size: 40.0),
-                child: const Icon(Icons.memory),
-              ),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        spacing: 10,
+        children: [
+          FloatingActionButton(
+            heroTag: 'object_detection',
+            onPressed: () {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(
+                  builder: (context) => ObjectDetection(imagePath: widget.imagePath)
+                )
+              );
+            },
+            child: IconTheme(
+              data: IconThemeData(size: 40.0),
+              child: const Icon(Icons.memory),
             ),
-          ]
+          ),
+        ]
         ),
     );
   }
