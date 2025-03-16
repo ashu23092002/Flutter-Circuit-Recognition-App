@@ -29,3 +29,4 @@ flutter:
   - assets/images/Stars.jpg
   - assets/images/Sunset.jpg
   - assets/models/best.tflite
+  - assets/models/detect.tflite
