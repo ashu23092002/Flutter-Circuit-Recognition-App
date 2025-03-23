@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -17,9 +18,13 @@ Future<void> main() async {
       ),
     );
   } else if(Platform.isAndroid){
+    WidgetsFlutterBinding.ensureInitialized();
+    final cameras = await availableCameras();
     runApp(
       MaterialApp(
-        home:CameraApp(),
+        home:CameraApp(
+          cameras: cameras
+        ),
       )
     );
   } else {

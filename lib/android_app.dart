@@ -5,8 +5,9 @@ import 'package:circuit_recognition_app/display_picture_screen.dart';
 
 /// Android Camera App
 class CameraApp extends StatefulWidget {
+  final List<CameraDescription> cameras;
   /// Camera App Initialization
-  const CameraApp({super.key});
+  CameraApp({super.key, required this.cameras});
 
   @override
   CameraScreenState createState() => CameraScreenState();
@@ -16,14 +17,23 @@ class CameraScreenState extends State<CameraApp> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
   int _currentCameraIndex = 0;
-  late List<CameraDescription> cameras;
+  late List<CameraDescription> cameras = widget.cameras;
 
   @override
-  void initState() async{
+  void initState(){
     super.initState();
-    cameras = await availableCameras();
     _initializeCamera(_currentCameraIndex);
   }
+
+  // /// Initialize cameras
+  // Future<void> _initializeCameras() async {
+  //   cameras = await availableCameras();
+  //   if (cameras.isNotEmpty) {
+  //     _initializeCamera(_currentCameraIndex);
+  //   } else {
+  //     setState(() {});
+  //   }
+  // }
 
   /// Initialize camera based on index
   void _initializeCamera(int cameraIndex) {
@@ -73,7 +83,9 @@ class CameraScreenState extends State<CameraApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Camera App'),),
-      body: FutureBuilder<void>(
+      body: cameras.isEmpty
+      ? const Center(child: Text('No camera available'),)
+      : FutureBuilder<void>(
         future: _initializeControllerFuture, 
         builder: (context, snapshot) {
           if(snapshot.connectionState == ConnectionState.done) {
