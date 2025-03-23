@@ -28,5 +28,6 @@ flutter:
   - assets/images/Rocket.jpg
   - assets/images/Stars.jpg
   - assets/images/Sunset.jpg
-  - assets/models/best.tflite
+  - assets/models/yolo12.tflite
+  - assets/models/yolo9.tflite
   - assets/models/detect.tflite

@@ -26,14 +26,15 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
   Future<void> _loadModel() async{  
     try{
-      interpreter = await Interpreter.fromFile(File(r'D:\ASUTOSH MISHRA\Downloads\Assignments\Circuit Recognition DNN\Flutter App\circuit_recognition_app\assets\models\detect.tflite'));
+      interpreter = await Interpreter.fromFile(File("assets/models/yolo9.tflite"));
+      dynamic inputTensorSize = await interpreter.getInputTensors();
+      debugPrint("$inputTensorSize");
       debugPrint("Model Loaded");
     } catch(e) {
       debugPrint("Error loading model: $e");
     }
   }
 
-  /// TODO: Fix input and output  
   Future<void> _runInference() async {
     var input = await preprocessImage(widget.imagePath!);
     var output = List.filled(1 * 8 * 8400, 0).reshape([1, 8, 8400]);
