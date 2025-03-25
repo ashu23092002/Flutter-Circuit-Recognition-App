@@ -17,7 +17,7 @@ Future<void> main() async {
         home: MainApp(displayText: 'Web App')
       ),
     );
-  } else if(Platform.isAndroid){
+  } else if(Platform.isAndroid) {
     WidgetsFlutterBinding.ensureInitialized();
     final cameras = await availableCameras();
     runApp(
