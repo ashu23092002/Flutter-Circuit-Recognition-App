@@ -16,7 +16,6 @@ class ObjectDetection extends StatefulWidget {
 class _ObjectDetectionState extends State<ObjectDetection> {
   late Interpreter interpreter;
   List<dynamic>? outputs;
-  List<Map<String, dynamic>> results = [];
 
   late TensorImage _inputImage;
   late TensorBuffer _outputBuffer;
@@ -24,17 +23,20 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   late List<int> _inputShape;
   late List<int> _outputShape;
 
-  late TensorType _inputType;
-  late TensorType _outputType;
+  final int _inputType = TfLiteType.kTfLiteFloat32;
+  final int _outputType = TfLiteType.kTfLiteFloat32;
+
   late img.Image imageInput;
   
-  late var _probabilityProcessor;
+  late List<double> outputList;
   
+  late List<List<double>> reshapedList = [];
   File? _image;
 
   @override
   void initState() {
     super.initState();
+    _image = File(widget.imagePath!);
     _loadModel();
   }
 
@@ -45,12 +47,10 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       
       _inputShape = interpreter.getInputTensor(0).shape;
       _outputShape = interpreter.getOutputTensor(0).shape;
-      _inputType = interpreter.getInputTensor(0).type;
-      _outputType = interpreter.getOutputTensor(0).type;
-      
-      _inputImage = TensorImage(TfLiteType.kTfLiteFloat32);
 
-      _image = File(widget.imagePath!);
+      _inputImage = TensorImage(_inputType);
+
+      
       imageInput = img.decodeImage(_image!.readAsBytesSync())!;
       _inputImage.loadImage(imageInput);
       
@@ -68,12 +68,15 @@ class _ObjectDetectionState extends State<ObjectDetection> {
     try{
       _inputImage = _preProcess();
       debugPrint("Pre-processed image");
-      _outputBuffer = TensorBuffer.createFixedSize(_outputShape, TfLiteType.kTfLiteFloat32);
+      _outputBuffer = TensorBuffer.createFixedSize(_outputShape, _outputType);
 
       interpreter.run(_inputImage.buffer, _outputBuffer.getBuffer());
       debugPrint("Ran Inference");
 
-      debugPrint("${_outputBuffer.getShape()}");
+      outputList = _outputBuffer.getDoubleList();
+
+      await _processOutput();
+      setState(() {});
     } catch(e) {
       debugPrint("Error running inference: $e");
     }   
@@ -87,6 +90,15 @@ class _ObjectDetectionState extends State<ObjectDetection> {
         .process(_inputImage);
   }
 
+  Future<void> _processOutput() async{
+    int numAnchors = _outputShape[2]; // 8400
+    int featureSize = _outputShape[1]; // 8
+
+    for (int i = 0; i < numAnchors; i++) {
+      reshapedList.add(outputList.sublist(i * featureSize, (i + 1) * featureSize));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,15 +106,14 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       body: Column(
         children: [
           Expanded(child:Center(child: Image.file(File(widget.imagePath!)),)),
-          results.isNotEmpty
+          reshapedList.isNotEmpty
           ? Expanded(
               child: ListView.builder(
-                itemCount: results.length,
+                itemCount: reshapedList.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text("Class: ${results[index]['class_id']}"),
-                    subtitle:
-                        Text("Confidence: ${results[index]['confidence']}"),
+                    title: Text("Anchor Box $index"),
+                    subtitle: Text("Values: ${reshapedList[index].join(", ")}"),
                   );
                 },
               ),
