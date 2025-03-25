@@ -1,0 +1,4 @@
+capacitor
+led
+resistor
+voltage

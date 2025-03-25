@@ -35,3 +35,4 @@ flutter:
   - assets/models/yolo12.tflite
   - assets/models/yolo9.tflite
   - assets/models/detect.tflite
+  - assets/labels/labels.txt
