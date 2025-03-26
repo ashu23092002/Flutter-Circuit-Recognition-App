@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:circuit_recognition_app/src/tflite_flutter_helper.dart';
 import 'package:image/image.dart' as img;
+
+import 'package:circuit_recognition_app/src/tflite_flutter_helper.dart';
+import 'package:circuit_recognition_app/utils/helper.dart';
 
 class ObjectDetection extends StatefulWidget {
   
@@ -32,6 +34,9 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   
   late List<List<double>> reshapedList = [];
   File? _image;
+
+  late List<List<double>> labelledData = [];
+  bool showReshapedList = true;
 
   @override
   void initState() {
@@ -76,6 +81,11 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       outputList = _outputBuffer.getDoubleList();
 
       await _processOutput();
+      debugPrint("Output Process: Reshaped List Extracted");
+
+      labelledData = await nonMaximumSuppression(reshapedList);
+      debugPrint("Output Process: Labelled Data Extracted");
+      debugPrint("Element Count: ${labelledData.length}");
       setState(() {});
     } catch(e) {
       debugPrint("Error running inference: $e");
@@ -101,24 +111,54 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
   @override
   Widget build(BuildContext context) {
+    List<List<double>> currentList = showReshapedList ? reshapedList : labelledData;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Detection'),),
+      appBar: AppBar(
+        title: const Text('Detection'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() => showReshapedList = showReshapedList ? false : true);
+            },
+            icon: const Icon(Icons.arrow_left),
+          ),
+          IconButton(
+            onPressed: () {
+              setState(() => showReshapedList = showReshapedList ? false : true);
+            },
+            icon: const Icon(Icons.arrow_right),
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          Expanded(child:Center(child: Image.file(File(widget.imagePath!)),)),
-          reshapedList.isNotEmpty
-          ? Expanded(
-              child: ListView.builder(
-                itemCount: reshapedList.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text("Anchor Box $index"),
-                    subtitle: Text("Values: ${reshapedList[index].join(", ")}"),
-                  );
-                },
-              ),
+          Expanded(
+            child:Center(
+              child: Image.file(File(widget.imagePath!)),
             )
-          : const Center(child: CircularProgressIndicator()),
+          ),
+          Text(
+            showReshapedList ? "Reshaped List" : "Labelled Data",
+          ),
+          currentList.isNotEmpty
+          ? Expanded(
+            child: ListView.builder(
+              itemCount: currentList.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text("$index."),
+                  subtitle: Text("Values: ${currentList[index].join(", ")}"),
+                );
+              }
+            )
+          )
+          : Row(
+            children: [
+              const Center(child: CircularProgressIndicator()),
+              const Text("Detecting"),
+            ],
+          )
         ],
       ),
     );
