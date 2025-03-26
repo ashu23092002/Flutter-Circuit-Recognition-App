@@ -4,7 +4,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:circuit_recognition_app/src/tflite_flutter_helper.dart';
-import 'package:circuit_recognition_app/utils/helper.dart';
+import 'package:circuit_recognition_app/utils/nms.dart';
 
 class ObjectDetection extends StatefulWidget {
   
@@ -58,7 +58,6 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       
       imageInput = img.decodeImage(_image!.readAsBytesSync())!;
       _inputImage.loadImage(imageInput);
-      
       try{
         await _runInference();
       } catch(e) {
@@ -82,8 +81,13 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
       await _processOutput();
       debugPrint("Output Process: Reshaped List Extracted");
+      debugPrint("Original Image Size: ${imageInput.height}, ${imageInput.width}");
+      labelledData = await nonMaximumSuppression(
+        reshapedList,
+        originalImageSize: [imageInput.height, imageInput.width],
+      );
 
-      labelledData = await nonMaximumSuppression(reshapedList);
+      
       debugPrint("Output Process: Labelled Data Extracted");
       debugPrint("Element Count: ${labelledData.length}");
       setState(() {});
@@ -139,7 +143,7 @@ class _ObjectDetectionState extends State<ObjectDetection> {
             )
           ),
           Text(
-            showReshapedList ? "Reshaped List" : "Labelled Data",
+            "Original Image",
           ),
           currentList.isNotEmpty
           ? Expanded(
@@ -158,7 +162,10 @@ class _ObjectDetectionState extends State<ObjectDetection> {
               const Center(child: CircularProgressIndicator()),
               const Text("Detecting"),
             ],
-          )
+          ),
+          Text(
+            showReshapedList ? "Reshaped List" : "Labelled Data",
+          ),
         ],
       ),
     );
