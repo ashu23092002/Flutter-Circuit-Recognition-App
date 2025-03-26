@@ -1,13 +1,15 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:circuit_recognition_app/src/tflite_flutter_helper.dart';
 import 'package:circuit_recognition_app/utils/nms.dart';
+import 'package:opencv_core/opencv.dart' as cv;
 
 class ObjectDetection extends StatefulWidget {
-  
   final String? imagePath;
   const ObjectDetection({super.key, required this.imagePath});
 
@@ -16,6 +18,10 @@ class ObjectDetection extends StatefulWidget {
 }
 
 class _ObjectDetectionState extends State<ObjectDetection> {
+  late List<File?> imageFiles = [];
+  late List<String> imageLabel = [];
+  late int currentIndex;
+
   late Interpreter interpreter;
   List<dynamic>? outputs;
 
@@ -36,12 +42,15 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   File? _image;
 
   late List<List<double>> labelledData = [];
-  bool showReshapedList = true;
+  bool showReshapedList = false;
 
   @override
   void initState() {
     super.initState();
     _image = File(widget.imagePath!);
+    imageFiles.add(_image);
+    imageLabel.add("Original Image");
+    currentIndex = 0;
     _loadModel();
   }
 
@@ -85,11 +94,17 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       labelledData = await nonMaximumSuppression(
         reshapedList,
         originalImageSize: [imageInput.height, imageInput.width],
+        confidenceThreshold: 0.8,
       );
 
       
       debugPrint("Output Process: Labelled Data Extracted");
       debugPrint("Element Count: ${labelledData.length}");
+
+      await _grayScaleProcessing();
+
+      await _drawBoundingBoxes();
+
       setState(() {});
     } catch(e) {
       debugPrint("Error running inference: $e");
@@ -113,6 +128,82 @@ class _ObjectDetectionState extends State<ObjectDetection> {
     }
   }
 
+  Future<void> _grayScaleProcessing() async{
+    try{
+      cv.Mat image = cv.imread(widget.imagePath!, flags: cv.IMREAD_COLOR);
+      cv.Mat grayScaleImage = await cv.cvtColor(image, cv.COLOR_RGB2GRAY);
+
+      var grayScaleEncodedImage = cv.imencode(".jpg", grayScaleImage).$2;
+
+      final directory = await getTemporaryDirectory();
+      final grayScalefilePath = '${directory.path}/processed_${DateTime.now().millisecondsSinceEpoch}.png';
+
+      final grayScaleFile = File(grayScalefilePath);
+      await grayScaleFile.writeAsBytes(grayScaleEncodedImage);
+
+      setState(() {
+        imageFiles.add(grayScaleFile);
+        imageLabel.add("Grayscale Image");
+      });
+
+      debugPrint("Processed Image Saved: $grayScalefilePath");
+    } catch(e) {
+      debugPrint("Error processing image: $e");
+    }
+  }
+
+  Future<void> _drawBoundingBoxes() async{
+    try{
+      Map<int, cv.Scalar> colorMap = {};
+      Random random = Random();
+
+      cv.Mat originalImage = cv.imread(widget.imagePath!, flags: cv.IMREAD_COLOR);
+      
+      for(var box in labelledData) {
+        int x1 = box[0].toInt(); // Top-left X
+        int y1 = box[1].toInt(); // Top-left Y
+        int x2 = box[2].toInt(); // Bottom-right X
+        int y2 = box[3].toInt(); // Bottom-right Y
+        int classId = box[5].toInt(); // Class ID
+        // debugPrint("$classId");
+
+        if (!colorMap.containsKey(classId)) {
+          colorMap[classId] = cv.Scalar(
+            random.nextInt(256).toDouble(),  // B
+            random.nextInt(256).toDouble(),  // G
+            random.nextInt(256).toDouble(),  // R
+          );
+        }
+
+        cv.Scalar boxColor = colorMap[classId]!;
+        cv.Rect boundingBox = cv.Rect(x1, y1, x2 - x1, y2 - y1);
+        cv.rectangle(originalImage, boundingBox, boxColor, thickness: 2);
+      }
+
+      debugPrint("Color Map:");
+      colorMap.forEach((classId, color) {
+        debugPrint("Class $classId -> Color (BGR): (${color})");
+      });
+
+      var predictedEncodedImage = cv.imencode(".jpg", originalImage).$2;
+
+      final directory = await getTemporaryDirectory();
+      final predictedfilePath = '${directory.path}/processed_${DateTime.now().millisecondsSinceEpoch}.png';
+
+      final predictedImageFile = File(predictedfilePath);
+      await predictedImageFile.writeAsBytes(predictedEncodedImage);
+
+      setState(() {
+        imageFiles.add(predictedImageFile);
+        imageLabel.add("Predicted Image");
+      });
+
+      debugPrint("Drawn bounding boxes: $predictedfilePath");
+    } catch(e) {
+      debugPrint("Error drawing bounding box: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     List<List<double>> currentList = showReshapedList ? reshapedList : labelledData;
@@ -120,30 +211,45 @@ class _ObjectDetectionState extends State<ObjectDetection> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detection'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() => showReshapedList = showReshapedList ? false : true);
-            },
-            icon: const Icon(Icons.arrow_left),
-          ),
-          IconButton(
-            onPressed: () {
-              setState(() => showReshapedList = showReshapedList ? false : true);
-            },
-            icon: const Icon(Icons.arrow_right),
-          ),
-        ],
       ),
       body: Column(
         children: [
           Expanded(
             child:Center(
-              child: Image.file(File(widget.imagePath!)),
+              child: Image.file(imageFiles[currentIndex]!),
             )
           ),
-          Text(
-            "Original Image",
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    if(currentIndex > 0) {
+                      currentIndex--;
+                    } else {
+                      currentIndex = imageFiles.length - 1;
+                    }
+                  });
+                },
+                icon: const Icon(Icons.arrow_left),
+              ),
+              Text(
+                imageLabel[currentIndex],
+              ),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    if(currentIndex < imageFiles.length - 1) {
+                      currentIndex++;
+                    } else {
+                      currentIndex = 0;
+                    }
+                  });
+                },
+                icon: const Icon(Icons.arrow_right),
+              ),
+            ],
           ),
           currentList.isNotEmpty
           ? Expanded(
@@ -163,8 +269,26 @@ class _ObjectDetectionState extends State<ObjectDetection> {
               const Text("Detecting"),
             ],
           ),
-          Text(
-            showReshapedList ? "Reshaped List" : "Labelled Data",
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  setState(() => showReshapedList = !showReshapedList);
+                },
+                icon: const Icon(Icons.arrow_left),
+              ),
+              Text(
+                showReshapedList ? "Reshaped List" : "Labelled Data",
+              ),
+              IconButton(
+                onPressed: () {
+                  setState(() => showReshapedList = !showReshapedList);
+                },
+                icon: const Icon(Icons.arrow_right),
+              ),
+              
+            ] 
           ),
         ],
       ),
