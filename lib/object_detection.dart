@@ -6,8 +6,8 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 
 import 'package:circuit_recognition_app/src/tflite_flutter_helper.dart';
-import 'package:circuit_recognition_app/utils/nms.dart';
 import 'package:opencv_core/opencv.dart' as cv;
+import 'package:circuit_recognition_app/utils/nms.dart';
 
 class ObjectDetection extends StatefulWidget {
   final String? imagePath;
@@ -42,7 +42,7 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   File? _image;
 
   late List<List<double>> labelledData = [];
-  bool showReshapedList = false;
+  bool showReshapedList = true;
 
   @override
   void initState() {
@@ -56,14 +56,13 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
   Future<void> _loadModel() async{  
     try{
-      interpreter = await Interpreter.fromAsset("assets/models/yolo9.tflite");
+      interpreter = await Interpreter.fromAsset("assets/models/yolo11.tflite");
       debugPrint("Model Loaded");
       
       _inputShape = interpreter.getInputTensor(0).shape;
       _outputShape = interpreter.getOutputTensor(0).shape;
 
       _inputImage = TensorImage(_inputType);
-
       
       imageInput = img.decodeImage(_image!.readAsBytesSync())!;
       _inputImage.loadImage(imageInput);
@@ -82,21 +81,19 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       _inputImage = _preProcess();
       debugPrint("Pre-processed image");
       _outputBuffer = TensorBuffer.createFixedSize(_outputShape, _outputType);
-
+      
       interpreter.run(_inputImage.buffer, _outputBuffer.getBuffer());
       debugPrint("Ran Inference");
 
       outputList = _outputBuffer.getDoubleList();
-
       await _processOutput();
       debugPrint("Output Process: Reshaped List Extracted");
-      debugPrint("Original Image Size: ${imageInput.height}, ${imageInput.width}");
+
       labelledData = await nonMaximumSuppression(
         reshapedList,
         originalImageSize: [imageInput.height, imageInput.width],
-        confidenceThreshold: 0.8,
+        confidenceThreshold: 0.99999999,
       );
-
       
       debugPrint("Output Process: Labelled Data Extracted");
       debugPrint("Element Count: ${labelledData.length}");
@@ -120,6 +117,20 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   }
 
   Future<void> _processOutput() async{
+    // // NMS output
+    // int numDetections = _outputShape[1]; // 300 detections
+    // int featureSize = _outputShape[2];   // 6 Features per detection
+
+    // reshapedList.clear();
+    // for (int i = 0; i < numDetections; i++) {
+    //   List<double> boxData = [];
+    //   for (int j = 0; j < featureSize; j++) {
+    //     boxData.add(outputList[i * featureSize + j]);
+    //   }
+    //   reshapedList.add(boxData);
+    // }
+
+    // No NMS output
     int numAnchors = _outputShape[2]; // 8400
     int featureSize = _outputShape[1]; // 8
 
@@ -182,7 +193,7 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
       debugPrint("Color Map:");
       colorMap.forEach((classId, color) {
-        debugPrint("Class $classId -> Color (BGR): (${color})");
+        debugPrint("Class $classId -> Color (BGR): ($color)");
       });
 
       var predictedEncodedImage = cv.imencode(".jpg", originalImage).$2;

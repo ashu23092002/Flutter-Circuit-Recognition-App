@@ -15,11 +15,12 @@ Future<List<List<double>>> nonMaximumSuppression(
     List<double> classProbs = box.sublist(4, 4 + numLabels);
     double maxConfidence = classProbs.reduce(max);
     int bestClassIdx = classProbs.indexOf(maxConfidence);
-    if(maxConfidence > confidenceThreshold) {
+    
+    if(maxConfidence >= confidenceThreshold) {
       filteredBoxes.add([...box.sublist(0,4), maxConfidence, bestClassIdx.toDouble()]);
     }
   }
-
+  
   if (filteredBoxes.isEmpty) return [];
 
   // Sort by confidence (Descending)

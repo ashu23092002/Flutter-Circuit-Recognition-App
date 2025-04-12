@@ -32,7 +32,14 @@ flutter:
   - assets/images/Rocket.jpg
   - assets/images/Stars.jpg
   - assets/images/Sunset.jpg
+  - assets/images/circuitTest1.jpg
+  - assets/images/circuitTestExpected1.png
+  - assets/models/yolo11.tflite
+  - assets/models/yolo11NMS.tflite
+  - assets/models/yolo11classes45.tflite
+  - assets/models/yolo11NMSclasses45.tflite
   - assets/models/yolo12.tflite
   - assets/models/yolo9.tflite
   - assets/models/detect.tflite
+  - assets/models/yolo9_float32.tflite
   - assets/labels/yolo9labels.txt
