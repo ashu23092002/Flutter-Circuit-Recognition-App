@@ -1,83 +1,119 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
 
-Future<List<List<double>>> nonMaximumSuppression(
-  List<List<double>> reshapedList,
-  {required List<int> originalImageSize,
-  double iouThreshold = 0.5,
-  double confidenceThreshold = 0.4}) async {
+(List<int>, List<List<double>>, List<double>) nms(
+  List<List<double>> rawOutput, {
+  double confidenceThreshold = 0.7,
+  double iouThreshold = 0.4,
+  bool agnostic = false,
+  int numClasses = 84,
+}) {
+  List<int> bestClasses = [];
+  List<double> bestScores = [];
 
-  List<List<double>> results = [];
-  List<List<double>> filteredBoxes = [];
+  List<int> boxesToSave = [];
 
-  for (var box in reshapedList) {
-    int numLabels = box.length - 4;
-    List<double> classProbs = box.sublist(4, 4 + numLabels);
-    double maxConfidence = classProbs.reduce(max);
-    int bestClassIdx = classProbs.indexOf(maxConfidence);
-    
-    if(maxConfidence >= confidenceThreshold) {
-      filteredBoxes.add([...box.sublist(0,4), maxConfidence, bestClassIdx.toDouble()]);
+  // Take the argmax to the determine the best classes and scores
+  for (int i = 0; i < 8400; i++) {
+    double bestScore = 0;
+    int bestCls = -1;
+    for (int j = 4; j < numClasses; j++) {
+      double clsScore = rawOutput[j][i];
+      if (clsScore > bestScore) {
+        bestScore = clsScore;
+        bestCls = j - 4;
+      }
+    }
+    if (bestScore > confidenceThreshold) {
+      bestClasses.add(bestCls);
+      bestScores.add(bestScore);
+      boxesToSave.add(i);
     }
   }
-  
-  if (filteredBoxes.isEmpty) return [];
 
-  // Sort by confidence (Descending)
-  filteredBoxes.sort((a, b) => b[4].compareTo(a[4]));
-  
-  while (filteredBoxes.isNotEmpty) {
-    var bestBox = filteredBoxes.removeAt(0);
-    List<double> convertedBox = convertBoxFormat(bestBox);
-    convertedBox = scaleBoxes(convertedBox, originalImageSize);
-
-    debugPrint("Boxlength: ${bestBox.length}");
-    
-    // Append confidence and class index to the results
-    results.add([...convertedBox, bestBox[4], bestBox[5]]);
-
-    // Suppress overlapping boxes with the same class
-    filteredBoxes.removeWhere((box) =>
-        box.last == bestBox[convertedBox.length + 1] && 
-        iou(convertedBox, convertBoxFormat(box)) > iouThreshold);
+  // Get rid of boxes below confidence threshold
+  List<List<double>> candidateBoxes = [];
+  for (var index in boxesToSave) {
+    List<double> savedBox = [];
+    for (int i = 0; i < 4; i++) {
+      savedBox.add(rawOutput[i][index]);
+    }
+    candidateBoxes.add(savedBox);
   }
 
-  return results;
+  var sortedBestScores = List.from(bestScores);
+  sortedBestScores.sort((a, b) => -a.compareTo(b));
+  List<int> argSortList =
+      sortedBestScores.map((e) => bestScores.indexOf(e)).toList();
+
+  List<int> sortedBestClasses = [];
+  List<List<double>> sortedCandidateBoxes = [];
+  for (var index in argSortList) {
+    sortedBestClasses.add(bestClasses[index]);
+    sortedCandidateBoxes.add(candidateBoxes[index]);
+  }
+
+  List<List<double>> finalBboxes = [];
+  List<double> finalScores = [];
+  List<int> finalClasses = [];
+
+  while (sortedCandidateBoxes.isNotEmpty) {
+    var bbox1xywh = sortedCandidateBoxes.removeAt(0);
+    finalBboxes.add(bbox1xywh);
+    var bbox1xyxy = xywh2xyxy(bbox1xywh);
+    finalScores.add(sortedBestScores.removeAt(0));
+    var class1 = sortedBestClasses.removeAt(0);
+    finalClasses.add(class1);
+
+    List<int> indexesToRemove = [];
+    for (int i = 0; i < sortedCandidateBoxes.length; i++) {
+      if ((agnostic || class1 == sortedBestClasses[i]) &&
+          computeIou(bbox1xyxy, xywh2xyxy(sortedCandidateBoxes[i])) >
+              iouThreshold) {
+        indexesToRemove.add(i);
+      }
+    }
+    for (var index in indexesToRemove.reversed) {
+      sortedCandidateBoxes.removeAt(index);
+      sortedBestClasses.removeAt(index);
+      sortedBestScores.removeAt(index);
+    }
+  }
+  return (finalClasses, finalBboxes, finalScores);
 }
-// Convert from (cx, cy, w, h) to (x1, y1, x2, y2)
-List<double> convertBoxFormat(List<double> box) {
-  double cx = box[0], cy = box[1], w = box[2], h = box[3];
-  double x1 = cx - w / 2, y1 = cy - h / 2, x2 = cx + w / 2, y2 = cy + h / 2;
-  return [x1, y1, x2, y2]; // Only return bounding box coordinates
+
+List<double> xywh2xyxy(List<double> bbox) {
+  double halfWidth = bbox[2] / 2;
+  double halfHeight = bbox[3] / 2;
+  return [
+    bbox[0] - halfWidth,
+    bbox[1] - halfHeight,
+    bbox[0] + halfWidth,
+    bbox[1] + halfHeight,
+  ];
 }
 
-// Scale Bounding Boxes to Original Image Size
-List<double> scaleBoxes(List<double> box, List<int> originalImageSize) {
-  double imgW = originalImageSize[1].toDouble();
-  double imgH = originalImageSize[0].toDouble();
+/// Computes the intersection over union between two bounding boxes encoded with
+/// the xyxy format.
+double computeIou(List<double> bbox1, List<double> bbox2) {
+  assert(bbox1[0] < bbox1[2]);
+  assert(bbox1[1] < bbox1[3]);
+  assert(bbox2[0] < bbox2[2]);
+  assert(bbox2[1] < bbox2[3]);
 
-  double x1 = (box[0] * imgW).clamp(0, imgW - 1);
-  double y1 = (box[1] * imgH).clamp(0, imgH - 1);
-  double x2 = (box[2] * imgW).clamp(0, imgW - 1);
-  double y2 = (box[3] * imgH).clamp(0, imgH - 1);
+  // Determine the coordinate of the intersection rectangle
+  double xLeft = max(bbox1[0], bbox2[0]);
+  double yTop = max(bbox1[1], bbox2[1]);
+  double xRight = min(bbox1[2], bbox2[2]);
+  double yBottom = min(bbox1[3], bbox2[3]);
 
-  return [x1, y1, x2, y2];
-}
+  if (xRight < xLeft || yBottom < yTop) {
+    return 0;
+  }
+  double intersectionArea = (xRight - xLeft) * (yBottom - yTop);
+  double bbox1Area = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1]);
+  double bbox2Area = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1]);
 
-// IoU Calculation
-double iou(List<double> box1, List<double> box2) {
-  double xLeft = max(box1[0], box2[0]);
-  double yTop = max(box1[1], box2[1]);
-  double xRight = min(box1[2], box2[2]);
-  double yBottom = min(box1[3], box2[3]);
-
-  double interWidth = max(0, xRight - xLeft);
-  double interHeight = max(0, yBottom - yTop);
-  double interArea = interWidth * interHeight;
-
-  double box1Area = (box1[2] - box1[0]) * (box1[3] - box1[1]);
-  double box2Area = (box2[2] - box2[0]) * (box2[3] - box2[1]);
-  double unionArea = box1Area + box2Area - interArea;
-
-  return interArea / unionArea;
+  double iou = intersectionArea / (bbox1Area + bbox2Area - intersectionArea);
+  assert(iou >= 0 && iou <= 1);
+  return iou;
 }
