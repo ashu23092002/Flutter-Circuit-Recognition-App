@@ -37,3 +37,4 @@ flutter:
   - assets/images/circuitTestExpected1.png
   - assets/models/yolov8_trained.tflite
   - assets/models/yolov8n_float32.tflite
+  - assets/models/yolov8_electronic-circuits-ifz6c.tflite

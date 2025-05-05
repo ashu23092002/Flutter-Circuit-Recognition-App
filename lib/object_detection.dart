@@ -21,19 +21,18 @@ class ObjectDetection extends StatefulWidget {
 class _ObjectDetectionState extends State<ObjectDetection> {
   static const inModelWidth = 640;
   static const inModelHeight = 640;
-  static const numClasses = 36;
-  static const double maxImageWidgetHeight = 600;
+  final int numClasses = labels.length;
+  static const double maxImageWidgetHeight = 400;
 
-  double confidenceThreshold = 0.4;
+  double confidenceThreshold = 0.1;
   double iouThreshold = 0.1;
   bool agnosticNMS = true;
+  bool isLoading = true;
 
   late int currentIndex;
   
   late List<File?> imageFiles = [];
   late List<String> imageFileNames = [];
-  late List<List<double>> reshapedList = [];
-  late List<List<double>> labelledData = [];
   
   List<List<double>>? inferenceOutput;
   List<int> classes = [];
@@ -47,16 +46,17 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
   bool showReshapedList = true;
 
-  final YoloModel model = YoloModel(
-    'assets/models/yolov8_trained.tflite',
-    inModelWidth,
-    inModelHeight,
-    numClasses,
-  );
+  late final YoloModel model;
 
   @override
   void initState() {
     super.initState();
+    model = YoloModel(
+      'assets/models/yolov8_electronic-circuits-ifz6c.tflite',
+      inModelWidth,
+      inModelHeight,
+      labels.length,
+    );
     model.init();
     _image = File(widget.imagePath!);
     imageFiles.add(_image);
@@ -68,9 +68,12 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   Future<void> _runInference() async{
     final image = img.decodeImage(await _image!.readAsBytes());
     imageWidth = image!.width;
-    imageHeight = image!.height;
+    imageHeight = image.height;
     inferenceOutput = model.infer(image);
     updatePostprocess();
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Future<void> _grayScaleProcessing() async{
@@ -100,7 +103,13 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   
   @override
   Widget build(BuildContext context) {
-    List<List<double>> currentList = showReshapedList ? reshapedList : labelledData;
+    if(isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     final bboxesColors = List<Color>.generate(
       numClasses,
       (_) => Color((Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0),
@@ -135,17 +144,65 @@ class _ObjectDetectionState extends State<ObjectDetection> {
         title: const Text('Detection'),
       ),
       body:
-        SizedBox(
-          height: maxImageWidgetHeight,
-          child: Center(
-            child: Stack(
-              children: [
-                Image.file(imageFiles[currentIndex]!),
-                ...bboxesWidgets,
-              ],
+        Column(
+          children: [
+            SizedBox(
+              width: imageWidth! * resizeFactor,
+              height: imageHeight! * resizeFactor,
+              child: Stack(
+                children: [
+                  Image.file(
+                    imageFiles[currentIndex]!,
+                    width: imageWidth! * resizeFactor,
+                    height: imageHeight! * resizeFactor,
+                    fit: BoxFit.fill, // ensures it uses the same scaling
+                  ),
+                  ...bboxesWidgets,
+                ],
+              ),
             ),
-          )
-      ),
+            const Divider(),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Index')),
+                    DataColumn(label: Text('Label')),
+                    DataColumn(label: Text('Confidence')),
+                    DataColumn(label: Text('X')),
+                    DataColumn(label: Text('Y')),
+                    DataColumn(label: Text('Width')),
+                    DataColumn(label: Text('Height')),
+                  ], 
+                  rows: List.generate(bboxes.length, (index) {
+                    final classIndex = classes[index];
+                    final label = labels[classIndex];
+                    final score = scores[index];
+                    final box = bboxes[index];
+
+                    final x = box[0].toStringAsFixed(1);
+                    final y = box[1].toStringAsFixed(1);
+                    final width = box[2].toStringAsFixed(1);
+                    final height = box[3].toStringAsFixed(1);
+
+                    return DataRow(
+                      cells: [
+                        DataCell(Text('${index + 1}')),
+                        DataCell(Text(label)),
+                        DataCell(Text('${(score * 100).toStringAsFixed(1)}%')),
+                        DataCell(Text(x)),
+                        DataCell(Text(y)),
+                        DataCell(Text(width)),
+                        DataCell(Text(height)),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -153,7 +210,6 @@ class _ObjectDetectionState extends State<ObjectDetection> {
     if (inferenceOutput == null) {
       return;
     }
-    debugPrint('Detected Inference Output ${inferenceOutput!.length} bboxes');
 
     List<int> newClasses = [];
     List<List<double>> newBboxes = [];
@@ -166,7 +222,6 @@ class _ObjectDetectionState extends State<ObjectDetection> {
       iouThreshold: iouThreshold,
       agnostic: agnosticNMS,
     );
-    debugPrint('Detected ${bboxes.length} bboxes');
     setState(() {
       classes = newClasses;
       bboxes = newBboxes;

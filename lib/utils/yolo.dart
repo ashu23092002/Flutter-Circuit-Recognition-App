@@ -79,6 +79,7 @@ class YoloModel {
       bbox[2] *= imageWidth;
       bbox[3] *= imageHeight;
     }
+    debugPrint("Detected ${bboxes.length} bboxes");
     return (classes, bboxes, scores);
   }
 
