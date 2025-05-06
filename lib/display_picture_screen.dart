@@ -25,6 +25,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
         .listSync()
         .where((f) => f is File && _isImage(f.path))
         .toList();
+    imageFiles.sort((a, b) => a.uri.pathSegments.last.compareTo(b.uri.pathSegments.last));
     currentIndex = imageFiles.indexWhere((f) => f.path == widget.imagePath);
   }
 
@@ -48,7 +49,16 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Gallery'),),
       body: Center(
-        child: Image.file(File(currentImage.path)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.file(File(currentImage.path)),
+            const SizedBox(height: 10,),
+            Text(
+              currentImage.uri.pathSegments.last,
+            ),
+          ],
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Column(
