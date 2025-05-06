@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:path_provider/path_provider.dart';
 
-import 'package:opencv_core/opencv.dart' as cv;
+// import 'package:opencv_core/opencv.dart' as cv;
 import 'package:image/image.dart' as img;
 
 import 'package:circuit_recognition_app/utils/yolo.dart';
@@ -76,29 +76,29 @@ class _ObjectDetectionState extends State<ObjectDetection> {
     });
   }
 
-  Future<void> _grayScaleProcessing() async{
-    try{
-      cv.Mat image = cv.imread(widget.imagePath!, flags: cv.IMREAD_COLOR);
-      cv.Mat grayScaleImage = cv.cvtColor(image, cv.COLOR_RGB2GRAY);
+  // Future<void> _grayScaleProcessing() async{
+  //   try{
+  //     cv.Mat image = cv.imread(widget.imagePath!, flags: cv.IMREAD_COLOR);
+  //     cv.Mat grayScaleImage = cv.cvtColor(image, cv.COLOR_RGB2GRAY);
 
-      var grayScaleEncodedImage = cv.imencode(".jpg", grayScaleImage).$2;
+  //     var grayScaleEncodedImage = cv.imencode(".jpg", grayScaleImage).$2;
 
-      final directory = await getTemporaryDirectory();
-      final grayScalefilePath = '${directory.path}/processed_${DateTime.now().millisecondsSinceEpoch}.png';
+  //     final directory = await getTemporaryDirectory();
+  //     final grayScalefilePath = '${directory.path}/processed_${DateTime.now().millisecondsSinceEpoch}.png';
 
-      final grayScaleFile = File(grayScalefilePath);
-      await grayScaleFile.writeAsBytes(grayScaleEncodedImage);
+  //     final grayScaleFile = File(grayScalefilePath);
+  //     await grayScaleFile.writeAsBytes(grayScaleEncodedImage);
 
-      setState(() {
-        imageFiles.add(grayScaleFile);
-        imageFileNames.add("Grayscale Image");
-      });
+  //     setState(() {
+  //       imageFiles.add(grayScaleFile);
+  //       imageFileNames.add("Grayscale Image");
+  //     });
 
-      debugPrint("Processed Image Saved: $grayScalefilePath");
-    } catch(e) {
-      debugPrint("Error processing image: $e");
-    }
-  }
+  //     debugPrint("Processed Image Saved: $grayScalefilePath");
+  //   } catch(e) {
+  //     debugPrint("Error processing image: $e");
+  //   }
+  // }
 
   
   @override

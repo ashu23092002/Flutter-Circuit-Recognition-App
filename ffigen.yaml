@@ -1,0 +1,14 @@
+name: NgSpiceBindings
+description: Bindings for ngSpice shared library.
+output: lib/utils/ngspice_bindings.dart
+
+headers:
+  entry-points:
+    - sharedspice.h
+
+  include-directives:
+    - '**sharedspice.h'
+
+compiler-opts:
+  - '-I.'
+  - '-std=c99'

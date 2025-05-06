@@ -15,6 +15,9 @@ class MainApp extends StatefulWidget {
 
 class WindowScreenState extends State<MainApp> {
   late String displayText;
+
+  /// State variable for appbar color
+  Color appBarColor = Colors.blue;
   
   /// Select Picture
   void _selectPicture(BuildContext context) async{
@@ -39,6 +42,13 @@ class WindowScreenState extends State<MainApp> {
     }
   }
 
+  /// Change AppBar Color
+  void _changeAppBarColor() {
+    setState(() {
+      appBarColor = Colors.red;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +59,10 @@ class WindowScreenState extends State<MainApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: Text(displayText),),
+        appBar: AppBar(
+          backgroundColor: appBarColor,
+          title: Text(displayText),
+        ),
         body: Center(
           child: Text(displayText),
         ),
@@ -68,7 +81,7 @@ class WindowScreenState extends State<MainApp> {
             ),
             FloatingActionButton(
               heroTag: 'spice_simulator',
-              onPressed: () {},
+              onPressed: () => _changeAppBarColor(),
               child: IconTheme(
                 data: IconThemeData(size: 40.0), 
                 child: const Icon(Icons.settings_input_composite),

@@ -7,7 +7,7 @@ import 'package:circuit_recognition_app/display_picture_screen.dart';
 class CameraApp extends StatefulWidget {
   final List<CameraDescription> cameras;
   /// Camera App Initialization
-  CameraApp({super.key, required this.cameras});
+  const CameraApp({super.key, required this.cameras});
 
   @override
   CameraScreenState createState() => CameraScreenState();
