@@ -141,7 +141,7 @@ class _ObjectDetectionState extends State<ObjectDetection> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detection'),
+        title: const Text('Object Detection'),
       ),
       body:
         Column(

@@ -53,22 +53,24 @@ class CameraScreenState extends State<CameraApp> {
   }
 
   /// Select Picture
-  void _selectPicture() async{
+  void _selectPicture(BuildContext context) async{
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
     );
 
     if(result != null) {
       String? imagePath = result.files.single.path;
-      if(imagePath != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => DisplayPictureScreen(
-              imagePath: imagePath
+      if(imagePath != null && mounted) {
+        if(context.mounted) {
+            Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DisplayPictureScreen(
+                imagePath: imagePath
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -102,7 +104,8 @@ class CameraScreenState extends State<CameraApp> {
         children: [
           FloatingActionButton(
             heroTag: 'select_picture',
-            onPressed: _selectPicture,
+            onPressed: () => _selectPicture(context),
+            tooltip: 'Select Picture',
             child: IconTheme(
               data: IconThemeData(size: 40.0), 
               child: const Icon(Icons.folder_open),
@@ -126,6 +129,7 @@ class CameraScreenState extends State<CameraApp> {
                 print(e);
               }
             },
+            tooltip: 'Take Picture',
             child: IconTheme(
               data: IconThemeData(size: 40.0),
               child: const Icon(Icons.camera),
@@ -135,6 +139,7 @@ class CameraScreenState extends State<CameraApp> {
           FloatingActionButton(
             onPressed: _switchCamera,
             heroTag: 'switch_camera',
+            tooltip: 'Switch Camera',
             child: IconTheme(
               data: IconThemeData(size: 40.0),
               child: const Icon(Icons.switch_camera),

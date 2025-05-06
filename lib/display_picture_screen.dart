@@ -48,29 +48,39 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Gallery'),),
       body: Center(
-        child: Image.file(File(currentImage.path!)),
+        child: Image.file(File(currentImage.path)),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FloatingActionButton(
-            heroTag: 'previous',
-            onPressed: currentIndex > 0
-              ? () => _showImageAtIndex(currentIndex - 1)
-              : null,
-            tooltip: 'Previous Image',
-            child: const Icon(Icons.arrow_back),
-          ),
-          const SizedBox(height: 10,),
-          FloatingActionButton(
-            heroTag: 'next',
-            onPressed: currentIndex < imageFiles.length - 1
-              ? () => _showImageAtIndex(currentIndex + 1)
-              : null,
-            tooltip: 'Next Image',
-            child: const Icon(Icons.arrow_forward),
-          ),
+          currentIndex > 0
+              ? FloatingActionButton(
+                  heroTag: 'previous',
+                  onPressed: () => _showImageAtIndex(currentIndex - 1),
+                  tooltip: 'Previous Image',
+                  child: const Icon(Icons.arrow_back),
+                )
+              : FloatingActionButton(
+                  heroTag: 'previous_disabled',
+                  onPressed: null,
+                  tooltip: 'No Previous Image',
+                  child: const Icon(Icons.arrow_back),
+                ),
+          const SizedBox(height: 10),
+          currentIndex < imageFiles.length - 1
+              ? FloatingActionButton(
+                  heroTag: 'next',
+                  onPressed: () => _showImageAtIndex(currentIndex + 1),
+                  tooltip: 'Next Image',
+                  child: const Icon(Icons.arrow_forward),
+                )
+              : FloatingActionButton(
+                  heroTag: 'next_disabled',
+                  onPressed: null,
+                  tooltip: 'No Next Image',
+                  child: const Icon(Icons.arrow_forward),
+                ),
           const SizedBox(height: 10),
           FloatingActionButton(
             heroTag: 'object_detection',
@@ -86,19 +96,21 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
             tooltip: 'Run Object Detection',
             child: const Icon(Icons.memory),
           ),
-          const SizedBox(height: 10,),
+          const SizedBox(height: 10),
           FloatingActionButton(
             heroTag: 'terminal_recognition',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => 
-                    TerminalRecognition(imagePath: currentImage.path),
+                  builder: (context) =>
+                      TerminalRecognition(imagePath: currentImage.path),
                 ),
               );
             },
-          )
+            tooltip: 'Run Terminal Recognition',
+            child: const Icon(Icons.settings_input_component),
+          ),
         ],
       ),
     );

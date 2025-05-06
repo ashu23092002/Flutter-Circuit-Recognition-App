@@ -10,7 +10,7 @@ class TerminalRecognition extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detection'),
+        title: const Text('Terminal Recognition'),
       ),
       body: Center(
         child: Image.file(

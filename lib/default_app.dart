@@ -42,13 +42,6 @@ class WindowScreenState extends State<MainApp> {
     }
   }
 
-  /// Change AppBar Color
-  void _changeAppBarColor() {
-    setState(() {
-      appBarColor = Colors.red;
-    });
-  }
-
   @override
   void initState() {
     super.initState();
@@ -74,17 +67,10 @@ class WindowScreenState extends State<MainApp> {
             FloatingActionButton(
               heroTag: 'select_picture',
               onPressed: () => _selectPicture(context),
+              tooltip: 'Select Picture',
               child: IconTheme(
                 data: IconThemeData(size: 40.0),
                 child: const Icon(Icons.folder_open),
-              ),
-            ),
-            FloatingActionButton(
-              heroTag: 'spice_simulator',
-              onPressed: () => _changeAppBarColor(),
-              child: IconTheme(
-                data: IconThemeData(size: 40.0), 
-                child: const Icon(Icons.settings_input_composite),
               ),
             ),
           ]
