@@ -25,16 +25,6 @@ class CameraScreenState extends State<CameraApp> {
     _initializeCamera(_currentCameraIndex);
   }
 
-  // /// Initialize cameras
-  // Future<void> _initializeCameras() async {
-  //   cameras = await availableCameras();
-  //   if (cameras.isNotEmpty) {
-  //     _initializeCamera(_currentCameraIndex);
-  //   } else {
-  //     setState(() {});
-  //   }
-  // }
-
   /// Initialize camera based on index
   void _initializeCamera(int cameraIndex) {
     _controller = CameraController(
